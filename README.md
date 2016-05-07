@@ -62,10 +62,10 @@ Returned value can be treated as String object, but has some additional properti
 **Note:** 
 
 - Returned value is extended class that is inherited from String object.
-  Therefore `new StringReader('something').readTo(/$/) == 'something'` is true,
-  but `new StringReader('something').readTo(/$/) === 'something'` is `false`.
-  Can call `toString` method to get primitive String object to prevent such a
-  harmful side effect.
+  Therefore `new StringReader('abc;def').readTo(/;/) == 'abc'` is true, but `new
+  StringReader('abc;def').readTo(/;/) === 'abc'` is `false`.  Can call
+  `toString` method to get primitive String object to prevent such a harmful
+  side effect.
 - **delimiter never be a pattern that matches empty string.** For example,
   `/$/m` does not match `CR` and `LF`, therefore `position` will be set before
   `CR` and `LF` and cannot advance to next line. So the following code will be

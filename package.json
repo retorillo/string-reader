@@ -1,6 +1,6 @@
 {
   "name": "string-reader",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Reads string based on regular expression that represents delimiter",
   "main": "index.js",
   "directories": {
@@ -18,8 +18,7 @@
     "reader",
     "stringreader",
     "parser",
-    "delimiter",
-    "utility"
+    "delimiter"
   ],
   "author": "retorillo",
   "license": "MIT"
