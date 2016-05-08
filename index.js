@@ -1,20 +1,30 @@
 "use strict";
 
-const _str = new WeakMap();
-const _pos = new WeakMap();
+const _content = new WeakMap();
+const _position = new WeakMap();
 
 class StringReader {
-   constructor(str) {
-      this.string = str;
+   constructor(content) {
+      this.content = content;
    }
+   set content (value) {
+      _content[this] = value ? (typeof(value) === 'string' ? value : value.toString()) : '';
+      _position[this] = 0;
+      return _content;
+   }
+   get content () { return _content[this]; }
+
+   // TODO: remove string property in the future package
+   // string is not reserved-word in javascript, but almost languages reserved it.
+   // therefore should not be used for property name, i thinked.
    set string (value) {
-      _str[this] = value ? (typeof(value) === 'string' ? value : value.toString()) : '';
-      _pos[this] = 0; 
+      console.warn('[WARN] StringReader.string property is deprecated and it will be removed in the future package. Use content property.');
+      return this.content = value;
    }
-   get string () { return _str[this]; }
-   set position (value) { return _pos[this] = Math.max(0, Math.min(this.length, value)); }
-   get position () { return _pos[this]; }
-   get length () { return this.string.length }
+   get string () { return this.content; }
+   set position (value) { return _position[this] = Math.max(0, Math.min(this.length, value)); }
+   get position () { return _position[this]; }
+   get length () { return this.content.length }
    get end () { return this.position == this.length }
    peek(count, errorThrown) {
       if (count < 0) {
@@ -22,46 +32,55 @@ class StringReader {
             throw errorThrown;
          var i = Math.max(0, this.position + count);
          var c = Math.min(this.position, -count);
-         return this.string.substr(i, c);
+         return this.content.substr(i, c);
       }
       else {
          var left = this.length - this.position;
          if (errorThrown && left < count)
             throw errorThrown;
-         return this.string.substr(this.position, Math.min(left, count));
+         return this.content.substr(this.position, Math.min(left, count));
       }
    }
    read(count, errorThrown) {
       var peek = this.peek(count, errorThrown);
       this.position = count < 0 ? Math.max(0, this.position + count)
-         : Math.min(this.string.length, this.position + count)
+         : Math.min(this.content.length, this.position + count)
       return peek;
    }
-   peekTo(delim, holdDelim, errorThrown) {
-      var head = this.string.slice(this.position);
-      var m = (delim instanceof RegExp ? delim : new RegExp(delim)).exec(head);
+   peekTo(delimiter, holdDelimiter, errorThrown) {
+      var r = (delimiter instanceof RegExp
+         ? (delimiter.global
+            ? delimiter
+            : new RegExp(delimiter.source, ['g',
+                 delimiter.multiline ? 'm' : '',
+                 delimiter.ignoreCase ? 'i' : ''
+              ].join(''))
+           )
+         : new RegExp(delimiter, 'g'));
+      r.lastIndex = this.position;
+      var m = r.exec(this.content);
       if (m && m[0].length == 0)
-         throw `delimiter never be a pattern that matches empty string: ${delim}`;
+         throw `delimiter never be a pattern that matches empty string: ${delimiter}`;
       if (!m && errorThrown)
          throw errorThrown;
       return new TaggedString(
-         head.substring(0, m
-            ? ( holdDelim
+         this.content.substring(this.position, m
+            ? ( holdDelimiter
                ? m.index + m[0].length
                : m.index
-              ) 
-            : head.length
-            ), { 
+              )
+            : this.content.length
+            ), {
                reader: this,
-               position: this.position, 
-               delim: m
+               position: this.position,
+               delimiter: m
             });
    }
-   readTo(delim, holdDelim, errorThrown) {
-      var peek = this.peekTo(delim, holdDelim, errorThrown);
-      this.position += (holdDelim ? peek.length
-         : ( peek.delim
-            ? peek.length + peek.delim[0].length
+   readTo(delimiter, holdDelimiter, errorThrown) {
+      var peek = this.peekTo(delimiter, holdDelimiter, errorThrown);
+      this.position += (holdDelimiter ? peek.length
+         : ( peek.delimiter
+            ? peek.length + peek.delimiter[0].length
             : peek.length
          )
       );
@@ -75,7 +94,7 @@ class StringReader {
    }
    peakToEnd(errorThrown) {
       if (errorThrown && this.end) throw errorThrown;
-      return this.string.slice(this.position);
+      return this.content.slice(this.position);
    }
    readToEnd(errorThrown) {
       var peak = this.peakToEnd(errorThrown);

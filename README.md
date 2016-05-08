@@ -6,7 +6,7 @@
 
 Reads string based on regular expression that represents delimiter.
 
-```
+```javascript
 const StringReader = require('string-reader')
 var reader = new StringReader('The quick brown fox jumps over the lazy dog.');
 var words = [];
@@ -19,35 +19,32 @@ console.log(words);
 
 ## Install
 
-```
+```bash
 npm install --save string-reader
 ```
 
 ## Constructor
 
-```
+```javascript
 const StringReader = require('string-reader');
-var reader = new StringReader(originalString);
+var reader = new StringReader(content);
 ```
 
-Specify `originalString` to read.
-
-This arguments is passed to `string` property.
-See `string` property to learn details. ([string](#string))
-
+Specify `content` to read. This argument is passed to `content` property. ([content](#content) property)
 
 ## Methods
 
-### readTo(delim, holdDelim, errorThrown)
+### readTo(delimiter, holdDelimiter, errorThrown)
 
 Reads from the current position to the specified delimiter.
 
-- `delim`: Specify delimiter as RegExp. When String is specified, it is treated
-  as pattern of RegExp. For example, `readTo(';')` is equivalent to `readTo(/;/)`.
-- `holdDelim`: Set `true` to include matched delimiter into returned string. By
-  default, delimiter does not be included. For example,
-  `new StringReader('a:b').readTo(/:/)` only returnes 'a', but 
-  `new StringReader('a:b').readTo(/:/, true)` returns 'a:' including delimiter.
+- `delimiter`: Specify delimiter as RegExp. When String is specified, it is
+  treated as pattern of RegExp. For example, `readTo(';')` is equivalent to
+  `readTo(new RegExp(';'))`.
+- `holdDelimiter`: Set `true` to include matched delimiter into returned string.
+  By default, delimiter does not be included. For example,
+  `new StringReader('a:b').readTo(/:/)` only returnes `a`, but
+  `new StringReader('a:b').readTo(/:/, true)` returns `a:` including delimiter.
 - `errorThrown`: Specify error that will be thrown if there are no delimiter
   matched. By default, no error be thrown if delimiter is unmatched, just only
   reads to end.
@@ -55,21 +52,21 @@ Reads from the current position to the specified delimiter.
 Returned value can be treated as String object, but has some additional properties:
 
 - `position`: Position of the first character of its returned string.
-- `delim`: Returned value of `RegExp.exec` method. Can use this property to
+- `delimiter`: Returned value of `RegExp.exec` method. Can use this property to
   detect which delimiter is matchd.
 - `reader`: Instance of StringReader
 
-**Note:** 
+**Note:**
 
 - Returned value is extended class that is inherited from String object.
-  Therefore `new StringReader('abc;def').readTo(/;/) == 'abc'` is true, but `new
+  Therefore `new StringReader('abc;def').readTo(/;/) == 'abc'` is `true`, but `new
   StringReader('abc;def').readTo(/;/) === 'abc'` is `false`.  Can call
   `toString` method to get primitive String object to prevent such a harmful
   side effect.
 - **delimiter never be a pattern that matches empty string.** For example,
   `/$/m` does not match `CR` and `LF`, therefore `position` will be set before
   `CR` and `LF` and cannot advance to next line. So the following code will be
-  loop: `while (reader.empty()) reader.readTo(/$/m)`. **For that reason, throws
+  loop: `while (!reader.end) reader.readTo(/$/m)`. **For that reason, throws
   error if empty match is appeared.** Use alternatively `readTo(/\r?\n|\r/)` or
   `readLine()` to read to end of the line.
 
@@ -78,7 +75,7 @@ Returned value can be treated as String object, but has some additional properti
 
 Reads from the current position to end of the current line.
 The next three newline formats are supported:
-`CRLF`(Windows),`LF`(Linux/Mac X and later) and `CR`(Mac 9 and ealier)
+`CRLF`(Windows), `LF`(Linux/Mac X and later) and `CR`(Mac 9 and ealier)
 
 - `errorThrown`: Specify error that be thrown if the current position is end of
   string. By default, no error be thrown, just only returns empty string.
@@ -108,7 +105,7 @@ Reads specified-count characters from the current position.
 
 ## Properties
 
-### string
+### content
 
 Get or set the original string.
 
@@ -118,9 +115,17 @@ Get or set the original string.
 - If set `null` or `undefined`, empty string is alternatively set.
 - If set non-string object, return-value of its `toString` is alternatively set.
 
+### string (DEPRECATED)
+
+This property was renamed to `content`.
+Now `string` property works but will be removed in the future package.
+
+`string` is not reserved in javascript, but almost languages reserved it.
+Therefore should not be used for property name, I thought.
+
 ### position
 
-Set or get current position.
+Get or set current position.
 
 **NOTE:**
 
@@ -136,7 +141,7 @@ Returns total length of original string.
 
 Returns whether its position is end of string.
 
-# License
+## License
 
 Distributed under the MIT license.
 
