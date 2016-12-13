@@ -23,8 +23,10 @@
   "author": "retorillo",
   "license": "MIT",
   "devDependencies": {
+    "coveralls": "^2.11.15",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "should": "^11.1.2"
-  }
+  },
+  "engines": { "node" : ">=4" }
 }
