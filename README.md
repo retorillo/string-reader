@@ -1,6 +1,8 @@
 # StringReader
 
 [![Build Status](https://travis-ci.org/retorillo/string-reader.svg?branch=master)](https://travis-ci.org/retorillo/string-reader)
+[![Coverage Status](https://coveralls.io/repos/github/retorillo/string-reader/badge.svg?branch=master)](https://coveralls.io/github/retorillo/string-reader?branch=master)
+[![Dependency Status](https://gemnasium.com/badges/github.com/retorillo/string-reader.svg)](https://gemnasium.com/github.com/retorillo/string-reader)
 [![NPM](https://img.shields.io/npm/v/string-reader.svg)](https://www.npmjs.com/package/string-reader)
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -103,6 +105,29 @@ Reads specified-count characters from the current position.
 - `peekToEnd` is equivalent to `readToEnd` but does not change current position.
 - `peek` is equivalent to `read` but does not change current position.
 
+### push(), pop(holdPosition) **[experimental]**
+
+`push` and `pop` can save/restore position to/from built-in stack,
+`pop` returns substring between last pushed index and current index.
+
+- `holdPosition`: Specify `true` if do not want to restore by last pushed index.
+
+```javascript
+const StringReader = require('string-reader')
+var reader = new StringReader('The quick brown fox jumps over the lazy dog.');
+reader.readTo(/\s+/);
+console.log(reader.position);
+// 4
+reader.push();
+reader.readTo(/\s+/);
+reader.readTo(/\s+/);
+reader.readTo(/\s+/);
+console.log(reader.pop());
+// quick brown fox
+console.log(reader.position);
+// 4
+```
+
 ## Properties
 
 ### content
@@ -114,14 +139,6 @@ Get or set the original string.
 - If set some value, `position` is always reset to zero.
 - If set `null` or `undefined`, empty string is alternatively set.
 - If set non-string object, return-value of its `toString` is alternatively set.
-
-### string (DEPRECATED)
-
-This property was renamed to `content`.
-Now `string` property works but will be removed in the future package.
-
-`string` is not reserved in javascript, but almost languages reserved it.
-Therefore should not be used for property name, I thought.
 
 ### position
 

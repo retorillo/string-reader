@@ -2,10 +2,12 @@
 
 const _content = new WeakMap();
 const _position = new WeakMap();
+const _stack = new WeakMap();
 
 class StringReader {
    constructor(content) {
       this.content = content;
+      _stack[this] = [];
    }
    set content (value) {
       _content[this] = value ? (typeof(value) === 'string' ? value : value.toString()) : '';
@@ -14,18 +16,21 @@ class StringReader {
    }
    get content () { return _content[this]; }
 
-   // TODO: remove string property in the future package
-   // string is not reserved-word in javascript, but almost languages reserved it.
-   // therefore should not be used for property name, i thinked.
-   set string (value) {
-      console.warn('[WARN] StringReader.string property is deprecated and it will be removed in the future package. Use content property.');
-      return this.content = value;
-   }
-   get string () { return this.content; }
    set position (value) { return _position[this] = Math.max(0, Math.min(this.length, value)); }
    get position () { return _position[this]; }
    get length () { return this.content.length }
    get end () { return this.position == this.length }
+
+   push() {
+      _stack[this].push(this.position);
+   }
+   pop(holdPosition) {
+      var from = _stack[this].pop();
+      var to = this.position;
+      if (!holdPosition)
+         this.position = from;
+      return this.content.substring(Math.min(from, to), Math.max(from, to))
+   }
    peek(count, errorThrown) {
       if (count < 0) {
          if (errorThrown && this.position + count < 0)
