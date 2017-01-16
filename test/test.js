@@ -1,5 +1,35 @@
 const StringReader = require('..');
+const StringStreamReader = require('../stream');
 const should = require('should');
+const fs = require('fs');
+
+function makestr(start, length) {
+  var str = [];
+  for (var c = 0; c < length; c++)
+    str.push(String.fromCharCode(start + c));
+  return str.join('');
+}
+
+describe("stream", function() {
+  before(function() {
+    return new Promise(function(resolve, reject) {
+      var s = fs.createWriteStream('dummy.txt');
+      for (var c = 0; c < 0xffff; c++)
+        s.write(String.fromCharCode(c));
+      s.end(function() {
+        s.close(resolve);
+      });
+    });
+  });
+  it ("can be read from file", function() {
+    var s = new StringStreamReader('dummy.txt');
+    var offset = 0;
+    var readc = 2048;
+    return s.read(readc).then(function(data){
+      should(data).eql(makestr(offset, readc));
+    });
+  });
+});
 
 describe("read", function() {
   const delim = ',';

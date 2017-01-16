@@ -6,6 +6,7 @@ const _stack = new WeakMap();
 
 class StringReader {
    constructor(content) {
+
       this.content = content;
       _stack[this] = [];
    }
