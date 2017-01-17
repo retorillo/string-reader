@@ -2,14 +2,29 @@
 var fs = require('fs');
 var _stream =  new WeakMap();
 var _lastread = new WeakMap();
+var _relays = new WeakMap();
+var _end = new WeakMap();
 
 class StringStreamReader {
   constructor(stream) {
     if (typeof(stream) === 'string')
-      _stream.set(this, fs.createReadStream(stream, { encoding: 'utf-8' }));
-    else
-      _stream.set(this, stream);
+      stream = fs.createReadStream(stream, { encoding: 'ucs2' });
+    _stream.set(this, stream);
+    var relays = [];
+    _relays.set(this, relays);
     _lastread.set(this, "");
+    _end.set(this, false);
+    stream.on('readable', function() {
+      relays.forEach(r => {
+        r.readable();
+      });
+    });
+    stream.on('end', () => {
+      _end.set(this, true);
+      relays.forEach(r => {
+        r.end();
+      });
+    });
   }
   read(count, errorThrown) {
     var mapkey = this;
@@ -29,26 +44,49 @@ class StringStreamReader {
         return;
       }
       readBlocks.appendBlock(lastread);
-      var callback = () => {
-        var block = stream.read(count);
-        if (block == null && errorThrown) {
-          reject(errorThrown);
+      var unregister = function() {
+        var relays = _relays.get(mapkey);
+        var i = relays.indexOf(relay);
+        if (i != -1)
+          relays.splice(i, 1);
+      }
+      var tryresolve = function(force) {
+        var result = readBlocks.join('');
+        if (!force && readBlocks.totalRead < count)
+          return;
+        _lastread.set(mapkey, result.substr(count));
+        unregister();
+        var result = result.substr(0, count);
+        resolve(count > 0 && result.length == 0 ? null : result);
+      }
+      var tryreject = function(error) {
+        unregister();
+        reject(error);
+      }
+      var tryread = function() {
+        if (_end.get(mapkey)) {
+          tryresolve(true);
           return;
         }
-        if (block == null) {
-          _lastread.set(mapkey, "");
-          resolve(readBlocks.join(''));
-        }
-        var totalRead = readBlocks.appendBlock(block);
-        if (totalRead >= count) {
-          var result = readBlocks.join('');
-          _lastread.set(mapkey, result.substr(count));
-          resolve(result.substr(0, count));
-        }
-        else
-          stream.once('readable', callback);
-      };
-      stream.once('readable', callback);
+        var block = stream.read(count);
+        if (block == null)
+          return; // end of stream or unreadable state
+        readBlocks.appendBlock(block);
+        tryresolve(false);
+      }
+      var relay = {
+        readable: function() {
+          tryread();
+        },
+        end: function() {
+          if (errorThrown)
+            tryreject(errorThrown);
+          else
+            tryresolve(true);
+        },
+      }
+      _relays.get(mapkey).push(relay);
+      tryread();
     });
   }
 }
